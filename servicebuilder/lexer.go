@@ -23,6 +23,18 @@ const (
 	COLON        // :
 	COMMA        // ,
 	NUMERIC      // 1234
+
+	// modes
+	FIELDS
+	PAGINATION
+)
+
+type ModeType int
+
+const (
+	M_MODEL ModeType = iota
+	M_FIELDS
+	M_PAGINATION
 )
 
 var eof = rune(0)
@@ -44,12 +56,19 @@ func isDigit(ch rune) bool {
 
 // Scanner represents a lexical scanner.
 type Scanner struct {
-	r *bufio.Reader
+	r        *bufio.Reader
+	modes    []*Mode
+	modeType ModeType
+}
+
+type Mode struct {
+	mode         ModeType
+	braceCounter int
 }
 
 // NewScanner returns a new instance of Scanner.
 func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{r: bufio.NewReader(r)}
+	return &Scanner{r: bufio.NewReader(r), modeType: M_MODEL}
 }
 
 // read reads the next rune from the bufferred reader.
@@ -100,6 +119,9 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	} else if isLetter(ch) {
 		s.unread()
 		return s.scanIdent()
+	} else if isDigit(ch) {
+		s.unread()
+		return s.scanNumber()
 	}
 
 	// Otherwise read the individual character.
@@ -111,8 +133,30 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	case ',':
 		return COMMA, string(ch)
 	case '{':
+		if len(s.modes) == 0 || s.modes[0].mode != s.modeType {
+			s.modes = append(s.modes, nil)
+			copy(s.modes[1:], s.modes[0:])
+			s.modes[0] = &Mode{mode: s.modeType}
+		}
+		s.modes[0].braceCounter++
 		return LEFTBRACE, string(ch)
 	case '}':
+		if len(s.modes) == 0 {
+			s.modes = append(s.modes, nil)
+			copy(s.modes[1:], s.modes[0:])
+			s.modes[0] = &Mode{mode: s.modeType}
+		}
+		s.modes[0].braceCounter--
+		if s.modes[0].braceCounter == 0 {
+			copy(s.modes[0:], s.modes[1:])
+			s.modes[len(s.modes)-1] = nil
+			s.modes = s.modes[:len(s.modes)-1]
+		}
+		if len(s.modes) == 0 {
+			s.modeType = M_MODEL
+		} else {
+			s.modeType = s.modes[0].mode
+		}
 		return RIGHTBRACE, string(ch)
 	case '[':
 		return LEFTSQBRACE, string(ch)
@@ -121,6 +165,24 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	}
 
 	return ILLEGAL, string(ch)
+}
+
+// scanNumber consumes the current rune and all contiguous number runes
+func (s *Scanner) scanNumber() (tok Token, lit string) {
+	// Create a buffer and read the current character into it.
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if !isDigit(ch) {
+			s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+	return NUMERIC, buf.String()
 }
 
 // scanIdent consumes the current rune and all contiguous ident runes.
@@ -143,12 +205,16 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	}
 
 	// If the string matches a keyword then return that keyword.
-	// switch strings.ToUpper(buf.String()) {
-	// case "FIELDS":
-	// 	return FIELDS, buf.String()
-	// case "PAGINATION":
-	// 	return PAGINATION, buf.String()
-	// }
+	if len(s.modes) > 0 && s.modes[0].mode == M_MODEL {
+		switch strings.ToUpper(buf.String()) {
+		case "FIELDS":
+			s.modeType = M_FIELDS
+			return FIELDS, buf.String()
+		case "PAGINATION":
+			s.modeType = M_PAGINATION
+			return PAGINATION, buf.String()
+		}
+	}
 
 	// Otherwise return as a regular identifier.
 	return IDENT, buf.String()
