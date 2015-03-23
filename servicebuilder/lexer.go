@@ -56,9 +56,8 @@ func isDigit(ch rune) bool {
 
 // Scanner represents a lexical scanner.
 type Scanner struct {
-	r        *bufio.Reader
-	modes    []*Mode
-	modeType ModeType
+	r     *bufio.Reader
+	modes []*Mode
 }
 
 type Mode struct {
@@ -68,7 +67,7 @@ type Mode struct {
 
 // NewScanner returns a new instance of Scanner.
 func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{r: bufio.NewReader(r), modeType: M_MODEL}
+	return &Scanner{r: bufio.NewReader(r)}
 }
 
 // read reads the next rune from the bufferred reader.
@@ -133,29 +132,20 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	case ',':
 		return COMMA, string(ch)
 	case '{':
-		if len(s.modes) == 0 || s.modes[0].mode != s.modeType {
-			s.modes = append(s.modes, nil)
-			copy(s.modes[1:], s.modes[0:])
-			s.modes[0] = &Mode{mode: s.modeType}
+		if len(s.modes) == 0 {
+			s.modes = append(s.modes, &Mode{mode: M_MODEL})
 		}
 		s.modes[0].braceCounter++
 		return LEFTBRACE, string(ch)
 	case '}':
 		if len(s.modes) == 0 {
-			s.modes = append(s.modes, nil)
-			copy(s.modes[1:], s.modes[0:])
-			s.modes[0] = &Mode{mode: s.modeType}
+			s.modes = append(s.modes, &Mode{mode: M_MODEL})
 		}
 		s.modes[0].braceCounter--
 		if s.modes[0].braceCounter == 0 {
 			copy(s.modes[0:], s.modes[1:])
 			s.modes[len(s.modes)-1] = nil
 			s.modes = s.modes[:len(s.modes)-1]
-		}
-		if len(s.modes) == 0 {
-			s.modeType = M_MODEL
-		} else {
-			s.modeType = s.modes[0].mode
 		}
 		return RIGHTBRACE, string(ch)
 	case '[':
@@ -208,10 +198,14 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	if len(s.modes) > 0 && s.modes[0].mode == M_MODEL {
 		switch strings.ToUpper(buf.String()) {
 		case "FIELDS":
-			s.modeType = M_FIELDS
+			s.modes = append(s.modes, nil)
+			copy(s.modes[1:], s.modes[0:])
+			s.modes[0] = &Mode{mode: M_FIELDS}
 			return FIELDS, buf.String()
 		case "PAGINATION":
-			s.modeType = M_PAGINATION
+			s.modes = append(s.modes, nil)
+			copy(s.modes[1:], s.modes[0:])
+			s.modes[0] = &Mode{mode: M_PAGINATION}
 			return PAGINATION, buf.String()
 		}
 	}
