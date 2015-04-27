@@ -78,7 +78,7 @@ var eof = rune(0)
 func (self *Lexer) scanWhitespace() Lexeme {
 	var buf bytes.Buffer
 	buf.WriteRune(self.read())
-	position := self.Position
+	position := *self.Position
 	for {
 		if ch := self.read(); ch == eof {
 			break
@@ -90,7 +90,26 @@ func (self *Lexer) scanWhitespace() Lexeme {
 		}
 	}
 
-	return Lexeme{WS, buf.String(), *position}
+	return Lexeme{WS, buf.String(), position}
+}
+
+func (self *Lexer) scanIdentifier() Lexeme {
+	var buf bytes.Buffer
+	buf.WriteRune(self.read())
+	position := *self.Position
+	// Read every subsequent ident character into the buffer.
+	// Non-ident characters and EOF will cause the loop to exit.
+	for {
+		if ch := self.read(); ch == eof {
+			break
+		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
+			self.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+	return Lexeme{IDENT, buf.String(), position}
 }
 
 func (self *Lexer) scan() {
@@ -101,28 +120,20 @@ ScanLoop:
 			self.unread()
 			self.bus <- self.scanWhitespace()
 			continue
+		} else if isLetter(ch) {
+			self.unread()
+			self.bus <- self.scanIdentifier()
+			continue
 		}
 		switch ch {
 		case eof:
 			self.bus <- Lexeme{EOF, "", *self.Position}
 			break ScanLoop
-		case ':':
-			self.bus <- Lexeme{COLON, string(ch), *self.Position}
-			continue
-		case ',':
-			self.bus <- Lexeme{COMMA, string(ch), *self.Position}
-			continue
 		case '{':
 			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
 			continue
 		case '}':
 			self.bus <- Lexeme{RIGHTBRACE, string(ch), *self.Position}
-			continue
-		case '[':
-			self.bus <- Lexeme{LEFTSQBRACE, string(ch), *self.Position}
-			continue
-		case ']':
-			self.bus <- Lexeme{RIGHTSQBRACE, string(ch), *self.Position}
 			continue
 		}
 		self.bus <- Lexeme{ILLEGAL, string(ch), *self.Position}
