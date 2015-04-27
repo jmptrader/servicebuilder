@@ -21,4 +21,11 @@ const (
 	// modes
 	FIELDS
 	PAGINATION
+
+	// Types
+	STRING
+	INT
+	DOUBLE
+	DATE
+	DATETIME
 )
