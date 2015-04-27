@@ -106,6 +106,24 @@ ScanLoop:
 		case eof:
 			self.bus <- Lexeme{EOF, "", *self.Position}
 			break ScanLoop
+		case ':':
+			self.bus <- Lexeme{COLON, string(ch), *self.Position}
+			continue
+		case ',':
+			self.bus <- Lexeme{COMMA, string(ch), *self.Position}
+			continue
+		case '{':
+			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
+			continue
+		case '}':
+			self.bus <- Lexeme{RIGHTBRACE, string(ch), *self.Position}
+			continue
+		case '[':
+			self.bus <- Lexeme{LEFTSQBRACE, string(ch), *self.Position}
+			continue
+		case ']':
+			self.bus <- Lexeme{RIGHTSQBRACE, string(ch), *self.Position}
+			continue
 		}
 		self.bus <- Lexeme{ILLEGAL, string(ch), *self.Position}
 	}
