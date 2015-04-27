@@ -24,16 +24,19 @@ type Lexer struct {
 	Reader   *bufio.Reader //  Content reader
 	bus      chan Lexeme   // Lexemes bus is populated with lexemes as they are consumed
 	Position *Position
+	nextFunc func()
 }
 
 // Return new lexer
 func NewLexer(name string, reader io.Reader) *Lexer {
-	return &Lexer{
+	lexer := &Lexer{
 		Name:     name,
 		Reader:   bufio.NewReader(reader),
 		bus:      make(chan Lexeme),
 		Position: &Position{0, 0},
 	}
+	lexer.nextFunc = lexer.scanModels
+	return lexer
 }
 
 // Read next rune
@@ -118,15 +121,24 @@ func (self *Lexer) scanModelIdentifier() Lexeme {
 	switch strings.ToLower(lexeme.Value) {
 	case "fields":
 		lexeme.Token = FIELDS
+		self.nextFunc = self.scanFields
 	case "pagination":
 		lexeme.Token = PAGINATION
 	}
 	return lexeme
 }
 
-func (self *Lexer) scan() {
+func (self *Lexer) scanFields() {
+	self.nextFunc = nil
+}
+
+func (self *Lexer) scanModels() {
+	self.nextFunc = nil
 ScanLoop:
 	for {
+		if self.nextFunc != nil {
+			self.nextFunc()
+		}
 		ch := self.read()
 		if isWhitespace(ch) {
 			self.unread()
@@ -139,7 +151,7 @@ ScanLoop:
 		}
 		switch ch {
 		case eof:
-			self.bus <- Lexeme{EOF, "", *self.Position}
+			self.unread()
 			break ScanLoop
 		case '{':
 			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
@@ -149,5 +161,17 @@ ScanLoop:
 			continue
 		}
 		self.bus <- Lexeme{ILLEGAL, string(ch), *self.Position}
+	}
+}
+
+func (self *Lexer) scan() {
+	for {
+		if self.nextFunc != nil {
+			self.nextFunc()
+		} else {
+			//TODO: check if it's in fact EOF. If not, illegal tokens should be returned
+			self.bus <- Lexeme{EOF, "", *self.Position}
+			break
+		}
 	}
 }
