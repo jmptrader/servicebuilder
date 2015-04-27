@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strings"
 )
 
 type Lexeme struct {
@@ -112,6 +113,17 @@ func (self *Lexer) scanIdentifier() Lexeme {
 	return Lexeme{IDENT, buf.String(), position}
 }
 
+func (self *Lexer) scanModelIdentifier() Lexeme {
+	lexeme := self.scanIdentifier()
+	switch strings.ToLower(lexeme.Value) {
+	case "fields":
+		lexeme.Token = FIELDS
+	case "pagination":
+		lexeme.Token = PAGINATION
+	}
+	return lexeme
+}
+
 func (self *Lexer) scan() {
 ScanLoop:
 	for {
@@ -122,7 +134,7 @@ ScanLoop:
 			continue
 		} else if isLetter(ch) {
 			self.unread()
-			self.bus <- self.scanIdentifier()
+			self.bus <- self.scanModelIdentifier()
 			continue
 		}
 		switch ch {
