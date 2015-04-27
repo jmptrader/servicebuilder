@@ -1,8 +1,14 @@
 package parse
 
+import (
+	"bufio"
+	"bytes"
+	"io"
+)
+
 type Lexeme struct {
 	Token Token
-	Value String
+	Value string
 	Pos   Position
 }
 
@@ -13,14 +19,14 @@ type Position struct {
 
 // Lexical parser for servicebuilder
 type Lexer struct {
-	Name     String        // Input filename. For error messages
+	Name     string        // Input filename. For error messages
 	Reader   *bufio.Reader //  Content reader
 	bus      chan Lexeme   // Lexemes bus is populated with lexemes as they are consumed
-	Position Position
+	Position *Position
 }
 
 // Return new lexer
-func NewLexer(name String, reader io.Reader) *Lexer {
+func NewLexer(name string, reader io.Reader) *Lexer {
 	return &Lexer{
 		Name:     name,
 		Reader:   bufio.NewReader(reader),
@@ -84,7 +90,7 @@ func (self *Lexer) scanWhitespace() Lexeme {
 		}
 	}
 
-	return Lexeme{WS, buf.String(), position}
+	return Lexeme{WS, buf.String(), *position}
 }
 
 func (self *Lexer) scan() {
@@ -94,13 +100,13 @@ ScanLoop:
 		if isWhitespace(ch) {
 			self.unread()
 			self.bus <- self.scanWhitespace()
+			continue
 		}
 		switch ch {
 		case eof:
-			self.bus <- Lexeme{EOF, "", self.Position}
+			self.bus <- Lexeme{EOF, "", *self.Position}
 			break ScanLoop
 		}
-		self.bus <- Lexeme{ILLEGAL, string(ch), self.Position}
+		self.bus <- Lexeme{ILLEGAL, string(ch), *self.Position}
 	}
-	return nil
 }

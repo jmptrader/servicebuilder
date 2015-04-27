@@ -1,6 +1,7 @@
 package parse
 
 // Lexer token
+//go:generate stringer -type=Token
 type Token int
 
 const (
