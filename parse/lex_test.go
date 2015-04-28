@@ -13,6 +13,8 @@ func TestLexerScanning(t *testing.T) {
     content: string
   }
   pagination {
+    per_page: 10
+    max_per_page: 50
   }
 }
 `
