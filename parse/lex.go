@@ -20,11 +20,12 @@ type Position struct {
 
 // Lexical parser for servicebuilder
 type Lexer struct {
-	Name     string        // Input filename. For error messages
-	Reader   *bufio.Reader //  Content reader
-	bus      chan Lexeme   // Lexemes bus is populated with lexemes as they are consumed
-	Position *Position
-	nextFunc func()
+	Name       string        // Input filename. For error messages
+	Reader     *bufio.Reader //  Content reader
+	bus        chan Lexeme   // Lexemes bus is populated with lexemes as they are consumed
+	Position   *Position
+	nextFunc   func()
+	parenDepth int // nesting depth of { } exprs
 }
 
 // Return new lexer
@@ -147,6 +148,7 @@ func (self *Lexer) scanFieldIdentifier() Lexeme {
 
 func (self *Lexer) scanFields() {
 	self.nextFunc = nil
+	originalParenDepth := self.parenDepth
 ScanLoop:
 	for {
 		if self.nextFunc != nil {
@@ -168,13 +170,18 @@ ScanLoop:
 			self.unread()
 			break ScanLoop
 		case '{':
+			self.parenDepth++
 			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
 			continue
 		case ':':
 			self.bus <- Lexeme{COLON, string(ch), *self.Position}
 			continue
 		case '}':
+			self.parenDepth--
 			self.bus <- Lexeme{RIGHTBRACE, string(ch), *self.Position}
+			if self.parenDepth == originalParenDepth {
+				break ScanLoop
+			}
 			continue
 		}
 	}
@@ -202,9 +209,11 @@ ScanLoop:
 			self.unread()
 			break ScanLoop
 		case '{':
+			self.parenDepth++
 			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
 			continue
 		case '}':
+			self.parenDepth--
 			self.bus <- Lexeme{RIGHTBRACE, string(ch), *self.Position}
 			continue
 		}
