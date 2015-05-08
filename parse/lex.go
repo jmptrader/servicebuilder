@@ -36,7 +36,7 @@ func NewLexer(name string, reader io.Reader) *Lexer {
 		bus:      make(chan Lexeme),
 		Position: &Position{0, 0},
 	}
-	lexer.nextFunc = lexer.scanModels
+	lexer.nextFunc = lexer.scanModel
 	return lexer
 }
 
@@ -247,7 +247,7 @@ ScanLoop:
 	}
 }
 
-func (self *Lexer) scanModels() {
+func (self *Lexer) scanModel() {
 	self.nextFunc = nil
 ScanLoop:
 	for {
@@ -281,11 +281,31 @@ ScanLoop:
 	}
 }
 
+func (self *Lexer) scanTopLevelIdentifier() Lexeme {
+	lexeme := self.scanIdentifier()
+	switch strings.ToLower(lexeme.Value) {
+	case "model":
+		lexeme.Token = MODEL
+		self.nextFunc = self.scanModel
+	}
+	return lexeme
+}
+
 func (self *Lexer) scan() {
 	for {
 		if self.nextFunc != nil {
 			self.nextFunc()
 		} else {
+			ch := self.read()
+			if isWhitespace(ch) {
+				self.unread()
+				self.bus <- self.scanWhitespace()
+				continue
+			} else if isLetter(ch) {
+				self.unread()
+				self.bus <- self.scanTopLevelIdentifier()
+				continue
+			}
 			//TODO: check if it's in fact EOF. If not, illegal tokens should be returned
 			self.bus <- Lexeme{EOF, "", *self.Position}
 			break

@@ -19,6 +19,7 @@ const (
 	NUMERIC      // 1234
 
 	// modes
+	MODEL
 	FIELDS
 	PAGINATION
 

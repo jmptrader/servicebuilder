@@ -7,7 +7,7 @@ import (
 )
 
 func TestLexerScanning(t *testing.T) {
-	content := `Page {
+	content := `model Page {
   fields {
     name: string
     content: string

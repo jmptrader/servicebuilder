@@ -4,18 +4,13 @@ package parse
 
 import "fmt"
 
-const _Token_name = "ILLEGALEOFWSIDENTLEFTBRACERIGHTBRACELEFTSQBRACERIGHTSQBRACECOLONCOMMANUMERICFIELDSPAGINATIONSTRINGINTDOUBLEDATEDATETIME"
+const _Token_name = "ILLEGALEOFWSIDENTLEFTBRACERIGHTBRACELEFTSQBRACERIGHTSQBRACECOLONCOMMANUMERICMODELFIELDSPAGINATIONSTRINGINTDOUBLEDATEDATETIME"
 
-var _Token_index = [...]uint8{7, 10, 12, 17, 26, 36, 47, 59, 64, 69, 76, 82, 92, 98, 101, 107, 111, 119}
+var _Token_index = [...]uint8{0, 7, 10, 12, 17, 26, 36, 47, 59, 64, 69, 76, 81, 87, 97, 103, 106, 112, 116, 124}
 
 func (i Token) String() string {
-	if i < 0 || i >= Token(len(_Token_index)) {
+	if i < 0 || i+1 >= Token(len(_Token_index)) {
 		return fmt.Sprintf("Token(%d)", i)
 	}
-	hi := _Token_index[i]
-	lo := uint8(0)
-	if i > 0 {
-		lo = _Token_index[i-1]
-	}
-	return _Token_name[lo:hi]
+	return _Token_name[_Token_index[i]:_Token_index[i+1]]
 }
