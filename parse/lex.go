@@ -36,7 +36,6 @@ func NewLexer(name string, reader io.Reader) *Lexer {
 		bus:      make(chan Lexeme),
 		Position: &Position{0, 0},
 	}
-	lexer.nextFunc = lexer.scanModel
 	return lexer
 }
 
