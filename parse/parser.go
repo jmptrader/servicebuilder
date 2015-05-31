@@ -9,29 +9,27 @@ import (
 )
 
 func NewParser(name string, reader io.Reader) *Parser {
-	parser := &Parser{lexer: NewLexer(name, reader), buffer: make([]Lexeme, 0, 0), app: &app.Application{Models: make([]*app.Model, 0, 0)}}
+	parser := &Parser{lexer: NewLexer(name, reader), app: &app.Application{Models: make([]*app.Model, 0, 0)}}
 	parser.scanner = parser.lexer.Scan()
 	return parser
 }
 
 type Parser struct {
-	lexer   *Lexer
-	scanner chan Lexeme
-	buffer  []Lexeme
-	index   int
-	app     *app.Application
+	lexer         *Lexer
+	scanner       chan Lexeme
+	lexeme        *Lexeme
+	unscanEnabled bool
+	index         int
+	app           *app.Application
 }
 
 func (self *Parser) scan() *Lexeme {
-	if self.index == len(self.buffer) {
+	if !self.unscanEnabled {
 		lexeme := <-self.scanner
-		self.buffer = append(self.buffer, lexeme)
-		self.index++
-		return &lexeme
+		self.lexeme = &lexeme
 	}
-	lexeme := self.buffer[self.index]
-	self.index++
-	return &lexeme
+	self.unscanEnabled = false
+	return self.lexeme
 }
 
 func (self *Parser) scanIgnoreWhitespace() *Lexeme {
@@ -42,13 +40,8 @@ func (self *Parser) scanIgnoreWhitespace() *Lexeme {
 	return lexeme
 }
 
-func (self *Parser) unscan() *Lexeme {
-	if self.index == 0 {
-		return nil
-	}
-	self.index--
-	lexeme := self.buffer[self.index]
-	return &lexeme
+func (self *Parser) unscan() {
+	self.unscanEnabled = true
 }
 func (self *Parser) Parse() (app.Application, error) {
 	for {
