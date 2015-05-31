@@ -1,12 +1,14 @@
 package parse
 
 import (
+	"errors"
+	"fmt"
 	"github.com/romanoff/servicebuilder/app"
 	"io"
 )
 
 func NewParser(name string, reader io.Reader) *Parser {
-	parser := &Parser{lexer: NewLexer(name, reader), buffer: make([]Lexeme, 0, 0)}
+	parser := &Parser{lexer: NewLexer(name, reader), buffer: make([]Lexeme, 0, 0), app: &app.Application{}}
 	parser.scanner = parser.lexer.Scan()
 	return parser
 }
@@ -16,6 +18,7 @@ type Parser struct {
 	scanner chan Lexeme
 	buffer  []Lexeme
 	index   int
+	app     *app.Application
 }
 
 func (self *Parser) scan() *Lexeme {
@@ -47,5 +50,51 @@ func (self *Parser) unscan() *Lexeme {
 	return &lexeme
 }
 func (self *Parser) Parse() (app.Application, error) {
-	return app.Application{}, nil
+	for {
+		lexeme := self.scanIgnoreWhitespace()
+		if lexeme.Token == EOF {
+			break
+		}
+		if lexeme.Token == MODEL {
+			err := self.parseModel()
+			if err != nil {
+				return *self.app, err
+			}
+		}
+	}
+	return *self.app, nil
+}
+
+func (self *Parser) parseModel() error {
+	model := &app.Model{}
+	lexeme := self.scanIgnoreWhitespace()
+	if lexeme.Token == EOF {
+		return errors.New("Unexpected EOF")
+	}
+	if lexeme.Token != IDENT {
+		return fmt.Errorf("found %q, expected model identifier", lexeme.Token)
+	}
+	model.Name = lexeme.Value
+	lexeme = self.scanIgnoreWhitespace()
+	if lexeme.Token == EOF {
+		return errors.New("Unexpected EOF")
+	}
+	if lexeme.Token != LEFTBRACE {
+		return fmt.Errorf("found %q, expected {", lexeme.Value)
+	}
+	// if err != self.parseModelFields(model) {
+	// 	return err
+	// }
+	lexeme = self.scanIgnoreWhitespace()
+	if lexeme.Token == EOF {
+		return errors.New("Unexpected EOF")
+	}
+	if lexeme.Token != RIGHTBRACE {
+		return fmt.Errorf("found %q, expected }", lexeme.Value)
+	}
+	return nil
+}
+
+func (self *Parser) parseModelFields(*app.Model) error {
+	return nil
 }
