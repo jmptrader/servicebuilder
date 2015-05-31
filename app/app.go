@@ -12,18 +12,17 @@ type Model struct {
 
 type Field struct {
 	Name string
-	Type int
+	Type FieldType
 }
 
 type FieldType int
 
 const (
-	String FieldType = iota
-	Text
-	Integer
-	Float
-	Date
-	DateTime
+	STRING FieldType = iota
+	INT
+	DOUBLE
+	DATE
+	DATETIME
 )
 
 type Pagination struct {

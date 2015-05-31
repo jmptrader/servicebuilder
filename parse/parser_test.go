@@ -2,6 +2,8 @@ package parse
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/kr/pretty"
 	"github.com/romanoff/servicebuilder/app"
 	"io/ioutil"
 	"path/filepath"
@@ -16,11 +18,26 @@ func TestParser(t *testing.T) {
 	}{
 		{
 			"simple.sb",
-			app.Application{},
+			app.Application{
+				Models: []*app.Model{
+					{
+						Name:   "User",
+						Fields: []*app.Field{{Name: "name", Type: app.STRING}},
+					},
+				},
+			},
 		},
 		{
 			"pagination.sb",
-			app.Application{},
+			app.Application{
+				Models: []*app.Model{
+					{
+						Name:       "User",
+						Fields:     []*app.Field{{Name: "name", Type: app.STRING}},
+						Pagination: &app.Pagination{PerPage: 20, MaxPerPage: 100},
+					},
+				},
+			},
 		},
 	}
 	for _, tc := range cases {
@@ -34,6 +51,8 @@ func TestParser(t *testing.T) {
 			t.Errorf("Expected to not get error while parsing %v fixture, but got %v", tc.Input, err)
 		}
 		if !reflect.DeepEqual(application, tc.Application) {
+			fmt.Printf("%# v\n", pretty.Formatter(application))
+			fmt.Printf("%# v\n", pretty.Formatter(tc.Application))
 			t.Error("Application not the same")
 		}
 	}
