@@ -20,6 +20,10 @@ func TestLexerScanning(t *testing.T) {
 			"pagination.sb",
 			[]Token{MODEL, WS, IDENT, WS, LEFTBRACE, WS, FIELDS, WS, LEFTBRACE, WS, IDENT, COLON, WS, STRING, WS, RIGHTBRACE, WS, PAGINATION, WS, LEFTBRACE, WS, IDENT, COLON, WS, NUMERIC, WS, IDENT, COLON, WS, NUMERIC, WS, RIGHTBRACE, WS, RIGHTBRACE, WS, EOF},
 		},
+		{
+			"actions.sb",
+			[]Token{MODEL, WS, IDENT, WS, LEFTBRACE, WS, ACTIONS, WS, LEFTBRACE, WS, IDENT, COLON, WS, LEFTSQBRACE, IDENT, COMMA, WS, IDENT, RIGHTSQBRACE, WS, RIGHTBRACE, WS, RIGHTBRACE, WS, EOF},
+		},
 	}
 	for _, tc := range cases {
 		content, err := ioutil.ReadFile(filepath.Join("test-fixtures", tc.Input))

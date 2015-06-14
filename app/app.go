@@ -8,6 +8,7 @@ type Model struct {
 	Name       string
 	Fields     []*Field
 	Pagination *Pagination
+	Actions    *RestfulActions
 }
 
 type Field struct {
@@ -28,4 +29,22 @@ const (
 type Pagination struct {
 	PerPage    int
 	MaxPerPage int
+}
+
+type RestfulActions struct {
+	Index   bool
+	Create  bool
+	Show    bool
+	Update  bool
+	Destroy bool
+}
+
+func DefaultRestfulActions() *RestfulActions {
+	return &RestfulActions{
+		Index:   true,
+		Create:  true,
+		Show:    true,
+		Update:  true,
+		Destroy: true,
+	}
 }

@@ -1,6 +1,6 @@
 package parse
 
-func (self *Lexer) scanPagination() {
+func (self *Lexer) scanActions() {
 	self.nextFunc = nil
 	originalParentDepth := self.parenDepth
 ScanLoop:
@@ -15,11 +15,8 @@ ScanLoop:
 			continue
 		} else if isLetter(ch) {
 			self.unread()
-			self.bus <- self.scanIdentifier()
-			continue
-		} else if isDigit(ch) {
-			self.unread()
-			self.bus <- self.scanNumber()
+			lexeme := self.scanIdentifier()
+			self.bus <- lexeme
 		}
 
 		switch ch {
@@ -30,9 +27,6 @@ ScanLoop:
 			self.parenDepth++
 			self.bus <- Lexeme{LEFTBRACE, string(ch), *self.Position}
 			continue
-		case ':':
-			self.bus <- Lexeme{COLON, string(ch), *self.Position}
-			continue
 		case '}':
 			self.parenDepth--
 			self.bus <- Lexeme{RIGHTBRACE, string(ch), *self.Position}
@@ -40,6 +34,15 @@ ScanLoop:
 				break ScanLoop
 			}
 			continue
+		case '[':
+			self.bus <- Lexeme{LEFTSQBRACE, string(ch), *self.Position}
+		case ']':
+			self.bus <- Lexeme{RIGHTSQBRACE, string(ch), *self.Position}
+		case ',':
+			self.bus <- Lexeme{COMMA, string(ch), *self.Position}
+		case ':':
+			self.bus <- Lexeme{COLON, string(ch), *self.Position}
 		}
+		// Illegal token
 	}
 }

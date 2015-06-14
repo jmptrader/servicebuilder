@@ -1,0 +1,5 @@
+model User {
+  actions {
+    rest_actions: [index, show]
+  }
+}

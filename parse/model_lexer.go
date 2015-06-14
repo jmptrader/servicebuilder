@@ -13,6 +13,9 @@ func (self *Lexer) scanModelIdentifier() Lexeme {
 	case "pagination":
 		lexeme.Token = PAGINATION
 		self.nextFunc = self.scanPagination
+	case "actions":
+		lexeme.Token = ACTIONS
+		self.nextFunc = self.scanActions
 	}
 	return lexeme
 }

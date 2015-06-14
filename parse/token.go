@@ -22,6 +22,7 @@ const (
 	MODEL
 	FIELDS
 	PAGINATION
+	ACTIONS
 
 	// Types
 	STRING
