@@ -89,6 +89,8 @@ modelSections:
 			err = self.parseModelFields(model)
 		case PAGINATION:
 			err = self.parseModelPagination(model)
+		case ACTIONS:
+			err = self.parseModelActions(model)
 		case RIGHTBRACE:
 			self.unscan()
 			break modelSections
@@ -200,6 +202,90 @@ func (self *Parser) parseModelPagination(model *app.Model) error {
 			model.Pagination.PerPage = paginationValue
 		case "max_per_page":
 			model.Pagination.MaxPerPage = paginationValue
+		}
+	}
+
+	lexeme = self.scanIgnoreWhitespace()
+	if lexeme.Token == EOF {
+		return errors.New("Unexpected EOF")
+	}
+	if lexeme.Token != RIGHTBRACE {
+		return fmt.Errorf("found %q, expected }", lexeme.Value)
+	}
+	return nil
+}
+
+func (self *Parser) parseModelActions(model *app.Model) error {
+	lexeme := self.scanIgnoreWhitespace()
+	if lexeme.Token == EOF {
+		return errors.New("Unexpected EOF")
+	}
+	if lexeme.Token != LEFTBRACE {
+		return fmt.Errorf("found %q, expected {", lexeme.Value)
+	}
+
+	lexeme = self.scanIgnoreWhitespace()
+	if lexeme.Token != IDENT || lexeme.Value != "rest_actions" {
+		self.unscan()
+	} else {
+		lexeme = self.scanIgnoreWhitespace()
+		if lexeme.Token == EOF {
+			return errors.New("Unexpected EOF")
+		}
+		if lexeme.Token != COLON {
+			return fmt.Errorf("found %q, expected :", lexeme.Value)
+		}
+		lexeme = self.scanIgnoreWhitespace()
+		if lexeme.Token == EOF {
+			return errors.New("Unexpected EOF")
+		}
+		if lexeme.Token != LEFTSQBRACE {
+			return fmt.Errorf("found %q, expected [", lexeme.Value)
+		}
+		model.Actions = &app.RestfulActions{}
+		for {
+			lexeme = self.scanIgnoreWhitespace()
+			if lexeme.Token == RIGHTSQBRACE {
+				self.unscan()
+				break
+			}
+			if lexeme.Token == EOF {
+				return errors.New("Unexpected EOF")
+			}
+			if lexeme.Token != IDENT {
+				return fmt.Errorf("found %q, expected restful action [index, create, show, update, destroy]", lexeme.Value)
+			}
+			switch lexeme.Value {
+			case "index":
+				model.Actions.Index = true
+			case "create":
+				model.Actions.Create = true
+			case "show":
+				model.Actions.Show = true
+			case "update":
+				model.Actions.Update = true
+			case "destroy":
+				model.Actions.Destroy = true
+			default:
+				return fmt.Errorf("unexpected restful action. Expected one of [index, create, show, update, destroy], but got %q", lexeme.Value)
+			}
+			lexeme = self.scanIgnoreWhitespace()
+			if lexeme.Token == EOF {
+				return errors.New("Unexpected EOF")
+			}
+			if lexeme.Token == COMMA {
+				continue
+			} else {
+				self.unscan()
+			}
+		}
+
+		lexeme = self.scanIgnoreWhitespace()
+		if lexeme.Token == EOF {
+			return errors.New("Unexpected EOF")
+		}
+		if lexeme.Token != RIGHTSQBRACE {
+			return fmt.Errorf("found %q, expected ]", lexeme.Value)
 		}
 	}
 

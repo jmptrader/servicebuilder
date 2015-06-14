@@ -39,6 +39,18 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			"actions.sb",
+			app.Application{
+				Models: []*app.Model{
+					{
+						Name:    "User",
+						Fields:  []*app.Field{},
+						Actions: &app.RestfulActions{Index: true, Show: true},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range cases {
 		content, err := ioutil.ReadFile(filepath.Join("test-fixtures", tc.Input))
