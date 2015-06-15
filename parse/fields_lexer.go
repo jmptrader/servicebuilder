@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func (self *Lexer) scanFieldIdentifier() Lexeme {
+func (self *Lexer) scanFieldTypeIdentifier() Lexeme {
 	lexeme := self.scanIdentifier()
 	switch strings.ToLower(lexeme.Value) {
 	case "string":
@@ -24,19 +24,28 @@ func (self *Lexer) scanFieldIdentifier() Lexeme {
 func (self *Lexer) scanFields() {
 	self.nextFunc = nil
 	originalParenDepth := self.parenDepth
+	fieldIdentifier := true
 ScanLoop:
 	for {
 		if self.nextFunc != nil {
 			self.nextFunc()
 		}
 		ch := self.read()
+
 		if isWhitespace(ch) {
 			self.unread()
 			self.bus <- self.scanWhitespace()
 			continue
-		} else if isLetter(ch) {
+		}
+		if isLetter(ch) {
 			self.unread()
-			self.bus <- self.scanFieldIdentifier()
+			if fieldIdentifier {
+				self.bus <- self.scanIdentifier()
+				fieldIdentifier = !fieldIdentifier
+			} else {
+				self.bus <- self.scanFieldTypeIdentifier()
+				fieldIdentifier = !fieldIdentifier
+			}
 			continue
 		}
 

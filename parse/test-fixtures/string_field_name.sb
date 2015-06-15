@@ -1,0 +1,7 @@
+model User {
+  fields {
+    name: string
+    string: string
+    fields: string
+  }
+}
